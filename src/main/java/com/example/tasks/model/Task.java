@@ -1,6 +1,7 @@
 package com.example.tasks.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 
 import java.time.LocalDate;
 
@@ -11,16 +12,20 @@ public class Task {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-   private String title;
+    @NotBlank(message = "Title is required!")
+    private String title;
+    @NotBlank(message = "Description is required!")
     private String  description;
+    @NotBlank(message = "Risk level is required! (LOW, MEDIUM, HIGH)")
     private String riskLevel; // Low, Medium, High
+    @NotBlank(message = "Due data is required!")
     private LocalDate dueDate;
 
 //    Constructors
     public Task() {}
 
     public Task( String title, String description, String riskLevel, LocalDate dueDate) {
-         this.title = title;
+        this.title = title;
         this.description = description;
         this.riskLevel = riskLevel;
         this.dueDate = dueDate;
