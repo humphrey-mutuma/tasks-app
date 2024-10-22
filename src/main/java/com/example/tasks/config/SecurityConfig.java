@@ -1,8 +1,11 @@
 package com.example.tasks.config;
 
+import com.example.tasks.service.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,34 +16,57 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // Configure security settings
-        http
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/users/login", "/api/users/register").permitAll()  // Allow public access to login and register
-                        .anyRequest().authenticated()  // All other requests need authentication
-                )
-                .csrf(csrf -> csrf.disable());  // Disable CSRF protection for REST APIs
-
-        // Configure HTTP Basic authentication separately (no more httpBasic().and())
-        http.httpBasic(basic -> basic.disable()); // Disable HTTP basic authentication (or remove if you want it)
-
-        return http.build();  // No need for "and()" chaining
-    }
-
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();  // Use BCrypt for password encoding
-    }
+    @Autowired
+    private CustomUserDetailsService userDetailsService;
 
     @Bean
     public AuthenticationManager authManager(HttpSecurity http) throws Exception {
         AuthenticationManagerBuilder authenticationManagerBuilder =
                 http.getSharedObject(AuthenticationManagerBuilder.class);
-        // Here you can configure your authentication manager
+
+        authenticationManagerBuilder.userDetailsService(userDetailsService)
+                .passwordEncoder(passwordEncoder()); // Use BCrypt for password encoding
+
         return authenticationManagerBuilder.build();
     }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .authorizeHttpRequests(authorize -> authorize
+                        .requestMatchers(
+                                "/swagger-ui.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-resources/**",
+                                "/v2/api-docs",
+                                "/webjars/**",
+                                "/api/users/login",
+                                "/api/users/register"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+                .csrf(csrf -> csrf.disable())
+                .httpBasic(Customizer.withDefaults());
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+//    @Bean
+//    public AuthenticationManager authManager(HttpSecurity http) throws Exception {
+//        AuthenticationManagerBuilder authenticationManagerBuilder =
+//                http.getSharedObject(AuthenticationManagerBuilder.class);
+//
+//        authenticationManagerBuilder.inMemoryAuthentication()
+//                .withUser("user")  // Set the username
+//                .password(passwordEncoder().encode("password")) // Set the password
+//                .roles("USER"); // Set the roles
+//
+//        return authenticationManagerBuilder.build();
+//    }
 }
